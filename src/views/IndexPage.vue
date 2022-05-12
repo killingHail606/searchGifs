@@ -1,14 +1,15 @@
 <script lang='ts' setup>
 import { onMounted, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
-import axios from 'axios';
 import HeaderBlock from '@/components/HeaderBlock.vue';
-import { GiphyGetResponseData, GiphyGetResponseRandom, GiphyGetResponseWithPagination } from '@/types/store/giphy';
+import { GiphyGetResponseData } from '@/types/store/giphy';
 import { Gif } from '@/types/main_types';
 
 import loading from '@/assets/loading.gif';
+import { useStore } from 'vuex';
 
 const { name } = useDisplay();
+const store = useStore();
 
 function getCountImageBlocks(): number {
   let countImageBlocks = 4;
@@ -22,15 +23,6 @@ function getCountImageBlocks(): number {
   }
 
   return countImageBlocks;
-}
-
-async function getRandomGifUrl(): Promise<string> {
-  const res = await axios.get<GiphyGetResponseRandom>('https://api.giphy.com/v1/gifs/random', {
-    params: {
-      api_key: import.meta.env.VITE_GIPHY_API,
-    },
-  });
-  return res.data.data.images.fixed_width.url;
 }
 
 const countImageBlocks = getCountImageBlocks();
@@ -47,6 +39,7 @@ const isNotFoundImage = ref<string>('');
 
 const trendingImages = ref<GiphyGetResponseData[]>([]);
 const searchedImages = ref<GiphyGetResponseData[]>([]);
+const imagesInBlocks = ref<Gif[][]>([]);
 
 function getRowImages() {
   isNotFound.value = false;
@@ -54,7 +47,7 @@ function getRowImages() {
     return searchedImages.value;
   } if (searchString.value.length > 0) {
     isNotFound.value = true;
-    getRandomGifUrl().then((url) => {
+    store.dispatch('getRandomGifUrl').then((url) => {
       isNotFoundImage.value = url;
     });
     return [];
@@ -62,38 +55,30 @@ function getRowImages() {
   return trendingImages.value;
 }
 
-const imagesInBlocks = ref<Gif[][]>([]);
-
 async function getTrendingGifs(loadMore = false): Promise<void> {
   isLoadingImages.value = true;
 
-  const res = await axios.get<GiphyGetResponseWithPagination>('https://api.giphy.com/v1/gifs/trending', {
-    params: {
-      api_key: import.meta.env.VITE_GIPHY_API,
-      limit: gifsPerPage,
-      offset: (page.value - 1) * gifsPerPage,
-    },
-  });
+  const res = await store.dispatch('getTrendingGifs', {
+    page: page.value,
+    gifsPerPage
+  })
 
-  lastPage.value = Math.ceil(res.data.pagination.total_count / gifsPerPage);
-  trendingImages.value = loadMore ? [...trendingImages.value, ...res.data.data] : res.data.data;
+  lastPage.value = Math.ceil(res.pagination.total_count / gifsPerPage);
+  trendingImages.value = loadMore ? [...trendingImages.value, ...res.data] : res.data;
   isLoadingImages.value = false;
 }
 
 async function getSearchedGifs(loadMore = false): Promise<void> {
   isLoadingImages.value = true;
 
-  const res = await axios.get<GiphyGetResponseWithPagination>('https://api.giphy.com/v1/gifs/search', {
-    params: {
-      api_key: import.meta.env.VITE_GIPHY_API,
-      limit: gifsPerPage,
-      q: searchString.value,
-      offset: (page.value - 1) * gifsPerPage,
-    },
-  });
+  const res = await store.dispatch('getSearchedGifs', {
+    page: page.value,
+    gifsPerPage,
+    searchString: searchString.value
+  })
 
-  lastPage.value = Math.ceil(res.data.pagination.total_count / gifsPerPage);
-  searchedImages.value = loadMore ? [...searchedImages.value, ...res.data.data] : res.data.data;
+  lastPage.value = Math.ceil(res.pagination.total_count / gifsPerPage);
+  searchedImages.value = loadMore ? [...searchedImages.value, ...res.data] : res.data;
   isLoadingImages.value = false;
 }
 
