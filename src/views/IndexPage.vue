@@ -26,6 +26,11 @@ function getCountImageBlocks(): number {
   return countImageBlocks;
 }
 
+/*
+Количество блоков для отображения изображений, в зависимости от размера экрана.
+Потом высчитыаеем чтобы высота каждого блока была примерно равной, тем самым
+красиво отображаем дозагруженные изображения
+*/
 const countImageBlocks = getCountImageBlocks();
 
 const lastPage = ref(Infinity);
