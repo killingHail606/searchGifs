@@ -1,12 +1,13 @@
 <script lang='ts' setup>
 import { onMounted, ref, watch } from 'vue';
 import { useDisplay } from 'vuetify';
+import { useStore } from 'vuex';
+import GifImage from '@/components/IndexPage/gifImage.vue';
 import HeaderBlock from '@/components/HeaderBlock.vue';
 import { GiphyGetResponseData } from '@/types/store/giphy';
 import { Gif } from '@/types/main_types';
 
 import loading from '@/assets/loading.gif';
-import { useStore } from 'vuex';
 
 const { name } = useDisplay();
 const store = useStore();
@@ -60,8 +61,8 @@ async function getTrendingGifs(loadMore = false): Promise<void> {
 
   const res = await store.dispatch('getTrendingGifs', {
     page: page.value,
-    gifsPerPage
-  })
+    gifsPerPage,
+  });
 
   lastPage.value = Math.ceil(res.pagination.total_count / gifsPerPage);
   trendingImages.value = loadMore ? [...trendingImages.value, ...res.data] : res.data;
@@ -74,8 +75,8 @@ async function getSearchedGifs(loadMore = false): Promise<void> {
   const res = await store.dispatch('getSearchedGifs', {
     page: page.value,
     gifsPerPage,
-    searchString: searchString.value
-  })
+    searchString: searchString.value,
+  });
 
   lastPage.value = Math.ceil(res.pagination.total_count / gifsPerPage);
   searchedImages.value = loadMore ? [...searchedImages.value, ...res.data] : res.data;
@@ -120,20 +121,6 @@ function divideGifsIntoBlocks(gifsRefs: GiphyGetResponseData[]): void {
       imagesInBlocks.value[blockIndex] = [picture];
     }
   });
-}
-
-async function shareGif(gif: Gif): Promise<void> {
-  navigator.share({
-    title: 'Gif',
-    text: gif.title,
-    url: gif.url,
-  })
-    .then(() => {
-      console.log('Successfully shared');
-    })
-    .catch(() => {
-      console.log('Share failed');
-    });
 }
 
 watch(searchString, async (value) => {
@@ -193,15 +180,7 @@ onMounted(async () => {
               :key="image.url"
               cols="12"
             >
-              <v-card
-                class="gif-image"
-                @click="shareGif(image)"
-              >
-                <v-img
-                  :src="image.url"
-                  class="gif-image"
-                />
-              </v-card>
+              <gifImage :image="image" />
             </v-col>
           </v-col>
           <v-col
@@ -215,15 +194,7 @@ onMounted(async () => {
               :key="image.url"
               cols="12"
             >
-              <v-card
-                class="gif-image"
-                @click="shareGif(image)"
-              >
-                <v-img
-                  :src="image.url"
-                  class="gif-image"
-                />
-              </v-card>
+              <gifImage :image="image" />
             </v-col>
           </v-col>
           <v-col
@@ -237,15 +208,7 @@ onMounted(async () => {
               :key="image.url"
               cols="12"
             >
-              <v-card
-                class="gif-image"
-                @click="shareGif(image)"
-              >
-                <v-img
-                  :src="image.url"
-                  class="gif-image"
-                />
-              </v-card>
+              <gifImage :image="image" />
             </v-col>
           </v-col>
           <v-col
@@ -257,15 +220,7 @@ onMounted(async () => {
               :key="image.url"
               cols="12"
             >
-              <v-card
-                class="gif-image"
-                @click="shareGif(image)"
-              >
-                <v-img
-                  :src="image.url"
-                  class="gif-image"
-                />
-              </v-card>
+              <gifImage :image="image" />
             </v-col>
           </v-col>
         </v-row>
@@ -298,33 +253,6 @@ onMounted(async () => {
 <style lang='scss' scoped>
 .loading-image {
   margin: 30px 0;
-}
-
-.gif-image {
-  border-radius: 10px;
-  position: relative;
-
-  &::after {
-    content: 'Share Gif';
-    color: white;
-    font-size: 25px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 10px;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  &:hover::after {
-    opacity: 1;
-  }
 }
 
 .not-found-image {
